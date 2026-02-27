@@ -65,3 +65,25 @@ app.listen(PORT, () => {
 app.get('/', (req, res) => {
   res.send('Server is running! Ready for integration. ');
 });
+
+const User = require('./models/User');
+
+
+
+// Add this route to handle the Login request from your frontend
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  // For the hackathon, we'll start with a simple success check
+  // Later, Friend B can add real database verification here
+  if (username && password) {
+    console.log(`User logged in: ${username}`);
+    res.status(200).json({
+      success: true,
+      userId: "user_123", // Temporary ID
+      message: "Login successful!"
+    });
+  } else {
+    res.status(400).json({ success: false, message: "Missing credentials" });
+  }
+});
