@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
-import AuthModal from './AuthModal'; // Make sure this path points to where you saved AuthModal.jsx
+import AuthModal from './AuthModal'; 
 
 const DEFAULT_LANG = 'javascript';
 
@@ -13,7 +13,6 @@ export default function Workspace({ problem, layoutSignal }) {
   // --- AUTHENTICATION STATE ---
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // ----------------------------
 
   const containerRef = useRef(null);
   const editorRef = useRef(null);
@@ -23,7 +22,6 @@ export default function Workspace({ problem, layoutSignal }) {
     return Object.keys(problem.code_snippets);
   }, [problem]);
 
-  // Check login status when the component loads
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     if (userId) {
@@ -31,14 +29,32 @@ export default function Workspace({ problem, layoutSignal }) {
     }
   }, []);
 
-  // Show popup if they try to click the editor while logged out
   const handleProtectedAction = (e) => {
     if (!isLoggedIn) {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       setShowAuthModal(true);
     }
   };
+
+  // --- NEW SUBMIT FUNCTION ---
+  const handleSubmit = () => {
+    if (!isLoggedIn) {
+      // Show the hacker modal if they aren't logged in!
+      setShowAuthModal(true);
+      return;
+    }
+
+    // Grab the code they currently have typed in the editor
+    const currentCode = codeCache[language];
+    
+    // For now, since the backend isn't ready, we just show a cool alert
+    console.log(`Submitting ${language} code:`, currentCode);
+    alert("🚀 Code submitted successfully! (Backend grading coming soon)");
+  };
+  // ---------------------------
 
   useEffect(() => {
     if (!problem?.code_snippets) return;
@@ -118,7 +134,9 @@ export default function Workspace({ problem, layoutSignal }) {
           <h2 className="text-lg font-semibold">{problem.title}</h2>
           <p className="text-xs text-gray-400">{problem.slug}</p>
         </div>
-        <div className="flex items-center gap-3">
+        
+        {/* ADDED SUBMIT BUTTON NEXT TO LANGUAGE DROPDOWN */}
+        <div className="flex items-center gap-4">
           <label className="text-sm text-gray-300">
             Language:
             <select
@@ -133,6 +151,13 @@ export default function Workspace({ problem, layoutSignal }) {
               ))}
             </select>
           </label>
+
+          <button 
+            onClick={handleSubmit}
+            className="bg-green-600 hover:bg-green-500 text-white font-bold py-1.5 px-6 rounded-md shadow-lg transition-colors text-sm"
+          >
+            Submit
+          </button>
         </div>
       </header>
 
