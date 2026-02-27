@@ -1,14 +1,20 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
+import AuthModal from './AuthModal'; // Make sure this path points to where you saved AuthModal.jsx
 
 const DEFAULT_LANG = 'javascript';
 
 export default function Workspace({ problem, layoutSignal }) {
   const [language, setLanguage] = useState(DEFAULT_LANG);
-  // The cache stores code for each language: { javascript: '...', python: '...' }
   const [codeCache, setCodeCache] = useState({});
   const [descriptionWidth, setDescriptionWidth] = useState(50);
+  
+  // --- AUTHENTICATION STATE ---
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // ----------------------------
+
   const containerRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -17,30 +23,46 @@ export default function Workspace({ problem, layoutSignal }) {
     return Object.keys(problem.code_snippets);
   }, [problem]);
 
-  // 1. Handle Problem Switching: Reset the entire cache when a new problem is selected
+  // Check login status when the component loads
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // Show popup if they try to click the editor while logged out
+  const handleProtectedAction = (e) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      e.stopPropagation();
+      setShowAuthModal(true);
+    }
+  };
+
   useEffect(() => {
     if (!problem?.code_snippets) return;
-
     const availableLangs = Object.keys(problem.code_snippets);
     const initialLang = availableLangs.includes(language) ? language : availableLangs[0];
     
     setLanguage(initialLang);
     
-    // Reset cache to the new problem's boilerplate snippets
     const newCache = {};
     availableLangs.forEach(lang => {
       newCache[lang] = problem.code_snippets[lang];
     });
     
     setCodeCache(newCache);
-  }, [problem?.slug]); // Triggers only when the unique problem changes
+  }, [problem?.slug]); 
 
-  // 2. Handle Language Switching: Just change the pointer, the cache preserves the data
   const handleLanguageChange = (e) => {
+    if (!isLoggedIn) {
+        setShowAuthModal(true);
+        return;
+    }
     setLanguage(e.target.value);
   };
 
-  // 3. Update Cache: Update only the current language's entry in the cache
   const handleCodeChange = (newCode) => {
     setCodeCache(prev => ({
       ...prev,
@@ -72,7 +94,6 @@ export default function Workspace({ problem, layoutSignal }) {
 
   const handleEditorMount = (editor) => {
     editorRef.current = editor;
-    // Ensure layout is correct on first render
     setTimeout(() => editor.layout(), 0);
   };
 
@@ -91,7 +112,7 @@ export default function Workspace({ problem, layoutSignal }) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-panel sticky top-0 z-10">
         <div>
           <h2 className="text-lg font-semibold">{problem.title}</h2>
@@ -164,16 +185,26 @@ export default function Workspace({ problem, layoutSignal }) {
           onMouseDown={handleInnerDividerMouseDown}
         />
 
+        {/* --- EDITOR SECTION --- */}
         <section
-          className="flex flex-col bg-background"
+          className="flex flex-col bg-background relative"
           style={{ width: `${100 - descriptionWidth}%` }}
         >
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden relative">
+            
+            {/* THE INVISIBLE SHIELD: Triggers popup if clicked while logged out */}
+            {!isLoggedIn && (
+                <div 
+                    className="absolute inset-0 z-20 cursor-pointer bg-transparent"
+                    onClick={handleProtectedAction}
+                    title="Log in to start coding"
+                />
+            )}
+
             <Editor
               height="100%"
               language={language === 'python3' ? 'python' : language}
               theme="vs-dark"
-              // Read current code from the cache object
               value={codeCache[language] || ''}
               onChange={handleCodeChange}
               onMount={handleEditorMount}
@@ -183,12 +214,18 @@ export default function Workspace({ problem, layoutSignal }) {
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
                 smoothScrolling: true,
-                automaticLayout: true // Helps with container resizing
+                automaticLayout: true 
               }}
             />
           </div>
         </section>
       </div>
+
+      {/* Render the AuthModal on top of everything */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 }
