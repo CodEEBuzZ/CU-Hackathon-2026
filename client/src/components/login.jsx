@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 const Login = () => {
     // State to toggle between forms: 'login', 'register', or 'forgot'
     const [view, setView] = useState('login');
-    
+
     // Form input states
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    
+
     const [message, setMessage] = useState('');
 
     const handleLoginSubmit = async (e) => {
@@ -24,7 +24,7 @@ const Login = () => {
             const data = await response.json();
             if (data.success) {
                 localStorage.setItem('userId', data.userId);
-                window.location.href = '/';
+                window.location.href = '/dashboard';
             } else {
                 setMessage(data.message || "Login failed");
             }
@@ -37,12 +37,12 @@ const Login = () => {
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
-        
+
         if (password !== confirmPassword) {
             setMessage("Passwords do not match!");
             return;
         }
-        
+
         setMessage('Sending verification email...');
         try {
             // This hits the backend route we are about to build
@@ -91,7 +91,7 @@ const Login = () => {
                 {view === 'register' && "Create an Account"}
                 {view === 'forgot' && "Reset Your Password"}
             </h1>
-            
+
             {message && <p className="mb-4 text-yellow-400 text-center max-w-xs">{message}</p>}
 
             {/* LOGIN FORM */}
@@ -116,10 +116,10 @@ const Login = () => {
                     <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white p-2 m-2 rounded font-bold transition">
                         Login
                     </button>
-                    
+
                     <div className="flex flex-col items-center mt-4 space-y-2">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={() => { setView('forgot'); setMessage(''); }}
                             className="text-sm text-blue-400 hover:text-blue-300"
                         >
@@ -170,8 +170,8 @@ const Login = () => {
                     <button type="submit" className="bg-green-600 hover:bg-green-700 text-white p-2 m-2 rounded font-bold transition">
                         Register
                     </button>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onClick={() => { setView('login'); setMessage(''); }}
                         className="text-sm text-gray-400 hover:text-gray-300 mt-4"
                     >
@@ -197,8 +197,8 @@ const Login = () => {
                     <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white p-2 m-2 rounded font-bold transition">
                         Send Reset Link
                     </button>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onClick={() => { setView('login'); setMessage(''); }}
                         className="text-sm text-gray-400 hover:text-gray-300 mt-4"
                     >
